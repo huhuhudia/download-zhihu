@@ -1,0 +1,11 @@
+
+    <input id="url" type="text"></input>
+    <button  onclick="upload()">submit</button>
+
+<script>
+    function upload(){
+        input = document.getElementById('url')
+        alert(input.value)
+        window.location = "/content?"+"url="+input.value
+    }
+</script>
