@@ -22,16 +22,15 @@ def get_chinese(check_str):
     for ch in check_str:
         
         
-        if u'\u4e00' <= ch <= u'\u9fff' or ch in "，！。,.":
-            if tmp == ch:
-                repeat_num+=1
-                print(ch,end=" ")
-            else:
-                repeat_num = 0
-
+        if u'\u4e00' <= ch <= u'\u9fff' :
+            repeat_num = 0
+            res += ch
+        elif  ch in "，！。,.1234567890":
+            repeat_num += 1
             if repeat_num < 2:
                 res += ch
-    
+
+            
     return res
 
 
@@ -47,12 +46,30 @@ def get_content():
     r = requests.get(url,headers= headers)
     soup = BeautifulSoup(r.content,features="html.parser")
     res = get_chinese(str(soup))
+
+    ''' find a start point '''
+    start = 0
     try:
         start = res.index(start_tag) + start_tag_len
+        res = res[start:]
     except:
-        start = 0
+
+        try:
+            if "人赞同了该回答" in res:
+                start = res.index("人赞同了该回答")
+                res = res[start+len("人赞同了该回答")+1 :]
+        except:
+            pass
+    '''find end '''
     
-    res = res[start:]
+    end = len(res)
+    try:
+        if "发布于" in res:
+            end = res.index("发布于")
+    except:
+        pass
+    res = res[:end]
+    
     with open('./content/'+url.split("/")[-1]+".html", "w+" ) as f:
         f.write(res)
     return res
