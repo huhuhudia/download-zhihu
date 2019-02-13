@@ -3,9 +3,25 @@ from flask import render_template
 from flask import Flask, request
 
 import requests
+import sqlite3
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 app = Flask(__name__)
+conn = sqlite3.connect("clipboard.db")
+cur = conn.cursor()
+cur.executescript(
+    """
+        create table if not exists clipboard (
+            id integer primary key,
+            time text,
+            info text
+        );
+        insert into clipboard(time,info) values("2010", "helloworld");
+    """
+)
+
+cur.close()
 
 headers = {
     "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
@@ -72,7 +88,29 @@ def get_content():
     
     with open('./content/'+url.split("/")[-1]+".html", "w+" ) as f:
         f.write(res)
-    return res
+
+    return render_template("content.html",content = res)
+
+
+@app.route("/sync")
+def clipboard_sync():
+    conn = sqlite3.connect("clipboard.db")
+    cur = conn.cursor()
+    sync_value = request.args.get("value")
+    if sync_value:
+        time = str(datetime.now()).split('.')
+        time = time[0]
+        cur.execute("insert into clipboard(time, info) values(?,?)",(time,sync_value))
+        conn.commit()
+        
+
+
+    cur.execute("select time, info from clipboard order by time  desc limit 4")
+    res = cur.fetchall()
+    cur.close()
+    conn.close()
+    # print(res)
+    return render_template("sync.html", res = res)
     
 
 app.run(host="0.0.0.0", port=80)
